@@ -24,6 +24,22 @@
     "SECRET_TOKEN": {
       "description": "Random seed",
       "generator": "secret"
+    },
+    "AWS_S3_ACCESS_KEY": {
+      "description": "Access key for S3",
+      "required": true
+    },
+    "AWS_S3_SECRET_KEY": {
+      "description": "Secret key for S3",
+      "required": true
+    },
+    "AUDD_API_TOKEN": {
+      "description": "Api token for AudD service",
+      "required": true
+    },
+    "SPOTIFY_API_TOKEN": {
+      "description": "Spotify Api token",
+      "required": true
     }
   },
   "scripts": {
