@@ -8,6 +8,7 @@ import uuid
 import spotipy
 
 
+
 TOKEN = os.environ.get('BOT_TOKEN')
 AUDD_API_TOKEN = os.environ.get('AUDD_API_TOKEN')
 
@@ -23,9 +24,8 @@ s3Client = session.client('s3')
 def start(message):
     bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
 
-
 @bot.message_handler(func=lambda message: True, content_types=['voice'])
-def echo_message(message):
+def recognize_song(message):
 
     bot.reply_to(message, "⚙️ Procesando tu audio...", parse_mode="Markdown")
 
@@ -48,23 +48,27 @@ def echo_message(message):
             getSongInfo = requests.get('https://api.audd.io/?api_token=' + AUDD_API_TOKEN + '&url=' + object_url)
             if getSongInfo.status_code == 200:
                 songInfo = getSongInfo.json()['result']
-                songTitle = songInfo['title']
-                songArtist = songInfo['artist']
-                songAlbum = songInfo['album']
+                if songInfo:
+                    songTitle = songInfo['title']
+                    songArtist = songInfo['artist']
+                    songAlbum = songInfo['album']
 
-                messageToSend = ("Tu canción 🎶 es:\n"
-                                "*Título:* {}\n"
-                                "*Artista:* {}\n"
-                                "*Album:* {}").format(songTitle.encode('utf-8'), songArtist.encode('utf-8'), songAlbum.encode('utf-8'))
-                
-                bot.send_message(message.chat.id, messageToSend, parse_mode="Markdown")
-                
-                spotifySearch = spotify.search(q='track:' + songTitle.encode('utf-8'), type='track')
-                if(len(spotifySearch)):
-                    spotifyURL = spotifySearch['tracks']['items'][0]['external_urls']['spotify']
 
-                bot.send_message(message.chat.id, "*URL Spotify:* " + spotifyURL, parse_mode="Markdown")
-                Song.set_config(message.chat.id, 'memory', songTitle, songAlbum, songArtist)
+                    messageToSend = ("Tu canción 🎶 es:\n"
+                                    "*Título:* {}\n"
+                                    "*Artista:* {}\n"
+                                    "*Album:* {}").format(songTitle.encode('utf-8'), songArtist.encode('utf-8'), songAlbum.encode('utf-8'))
+                    
+                    bot.send_message(message.chat.id, messageToSend, parse_mode="Markdown")
+                    
+                    spotifySearch = spotify.search(q='track:' + songTitle.encode('utf-8'), type='track')
+                    if(len(spotifySearch)):
+                        spotifyURL = spotifySearch['tracks']['items'][0]['external_urls']['spotify']
+
+                    bot.send_message(message.chat.id, "*URL Spotify:* " + spotifyURL, parse_mode="Markdown")
+                    Song.set_config(message.chat.id, 'memory', songTitle, songAlbum, songArtist)
+                else:
+                    bot.reply_to(message, "No se ha podido reconocer ninguna canción. Inténtalo de nuevo.")
             else:
                 bot.reply_to(message, "Error de reconocimiento de audio.")
         else:
