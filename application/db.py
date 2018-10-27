@@ -20,12 +20,8 @@ from model.song import Song
 #     bot.reply_to(message, "Dato guardado. Usa /load para recuperar")
 
 
-@bot.message_handler(commands=['load'])
+@bot.message_handler(commands=['history'])
 def load(message):
-    """
-    Recupera un dato guardado con save
-    """
-
     chat_id = message.chat.id
     data = Song.get_config(chat_id, 'memory')
     if not data:
