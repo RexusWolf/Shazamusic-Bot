@@ -20,4 +20,4 @@ def set_webhook(force=False):
 
 
 if __name__ == "__main__":
-    set_webhook(True)
+    set_webhook(False)
