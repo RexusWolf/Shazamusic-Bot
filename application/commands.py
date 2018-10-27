@@ -41,7 +41,7 @@ def set_recording(message):
 def get_song_info(title, artist, album, score = None):
     message = ""
     if title: message = message + "*Titulo:* " + title + "\n"
-    if artist: message = message + "*Artista:* " + artist + "\n"
+    if artist: message = message + "*Artista:* " + artist.translate({ord(c): None for c in '!@#$()_'}) + "\n"
     if album: message = message + "*Album:* " + album + "\n"
     if score: message = message + "*Probabilidad:* " + str(score) + "\n"
 
@@ -87,7 +87,7 @@ def recognize_song(message):
                                 if prediction.has_key('artist'): artist = prediction['artist']
                                 if prediction.has_key('album'): album = prediction['album']
                                 if prediction.has_key('score'): score = prediction['score']
-                                bot.send_message(message.chat.id, get_song_info(title, artist, album, score), parse_mode="Markdown")
+                                bot.send_message(message.chat.id, get_song_info(title, artist, album, score).encode('utf-8'), parse_mode="Markdown")
                         else:
                             bot.reply_to(message, "Lo has hecho fatal, intenta tararear de nuevo.")
                     else:
