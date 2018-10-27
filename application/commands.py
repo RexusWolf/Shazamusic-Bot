@@ -26,31 +26,38 @@ def echo_message(message):
     :return:
     """
     fileId = message.voice.file_id
-    getPathRequest = requests.get('https://api.telegram.org/bot' + TOKEN + '/getFile?file_id=' + fileId).json()
-    path = getPathRequest['result']['file_path']
-    rawFileRequest = requests.get('https://api.telegram.org/file/bot'+ TOKEN + '/' + path)
+    getPathRequest = requests.get('https://api.telegram.org/bot' + TOKEN + '/getFile?file_id=' + fileId)
+    if getPathRequest.status_code == 200:
+        path = getPathRequest['result']['file_path']
+        rawFileRequest = requests.get('https://api.telegram.org/file/bot'+ TOKEN + '/' + path)
+        if rawFileRequest.status_code == 200:
+            fileKey = str(uuid.uuid4())
 
-    fileKey = str(uuid.uuid4())
-    
-    upload = s3.Bucket('musictelegram').put_object(Key=fileKey, Body=rawFileRequest.content, ACL='public-read')
-    
-    bucket_location = s3Client.get_bucket_location(Bucket='musictelegram')
-    object_url = "http://s3-{0}.amazonaws.com/{1}/{2}".format(
-    bucket_location['LocationConstraint'],
-    'musictelegram',
-    fileKey)
+            upload = s3.Bucket('musictelegram').put_object(Key=fileKey, Body=rawFileRequest.content, ACL='public-read')
 
-    getSongInfo = requests.get('https://api.audd.io/?api_token=' + AUDD_API_TOKEN + '&url=' + object_url).json()
+            bucket_location = s3Client.get_bucket_location(Bucket='musictelegram')
+            object_url = "http://s3-{0}.amazonaws.com/{1}/{2}".format(
+            bucket_location['LocationConstraint'],
+            'musictelegram',
+            fileKey)
 
-    songInfo = getSongInfo['result']
-    songTitle = songInfo['title']
-    songArtist = songInfo['artist']
-    songAlbum = songInfo['album']
+            getSongInfo = requests.get('https://api.audd.io/?api_token=' + AUDD_API_TOKEN + '&url=' + object_url).json()
+            if getSongInfo.status_code == 200:
+                songInfo = getSongInfo['result']
+                songTitle = songInfo['title']
+                songArtist = songInfo['artist']
+                songAlbum = songInfo['album']
 
-    messageToSend = """
-    *Título: * {}
-    *Artista: * {}
-    *Album: * {}
-        """.format(songTitle, songArtist, songAlbum)
+                messageToSend = """
+                *Título: * {}
+                *Artista: * {}
+                *Album: * {}
+                    """.format(songTitle, songArtist, songAlbum)
 
-    bot.reply_to(message, messageToSend, parse_mode="Markdown")
+                bot.reply_to(message, messageToSend, parse_mode="Markdown")
+            else:
+                bot.reply_to(message, "Error de reconocimiento de audio.")
+        else:
+            bot.reply_to(message, "Error procesando tu audio. Intentalo de nuevo.")
+    else:
+            bot.reply_to(message, "Error procesando tu audio. Intentalo de nuevo.")
