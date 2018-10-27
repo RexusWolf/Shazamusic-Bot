@@ -4,6 +4,7 @@ from boto3.session import Session
 import requests
 import os
 import uuid
+from model.song import Song
 
 TOKEN = os.environ.get('BOT_TOKEN')
 AUDD_API_TOKEN = os.environ.get('AUDD_API_TOKEN')
@@ -20,15 +21,13 @@ def start(message):
 
 @bot.message_handler(func=lambda message: True, content_types=['voice'])
 def echo_message(message):
-    """
-    Hace un 'eco' de lo que se recibe y no se ha procesado en algún comando anterior.
-    :param message:
-    :return:
-    """
+
+    bot.reply_to(message, "⚙️ Procesando tu audio...", parse_mode="Markdown")
+
     fileId = message.voice.file_id
     getPathRequest = requests.get('https://api.telegram.org/bot' + TOKEN + '/getFile?file_id=' + fileId)
     if getPathRequest.status_code == 200:
-        path = getPathRequest['result']['file_path']
+        path = getPathRequest.json()['result']['file_path']
         rawFileRequest = requests.get('https://api.telegram.org/file/bot'+ TOKEN + '/' + path)
         if rawFileRequest.status_code == 200:
             fileKey = str(uuid.uuid4())
@@ -41,20 +40,21 @@ def echo_message(message):
             'musictelegram',
             fileKey)
 
-            getSongInfo = requests.get('https://api.audd.io/?api_token=' + AUDD_API_TOKEN + '&url=' + object_url).json()
+            getSongInfo = requests.get('https://api.audd.io/?api_token=' + AUDD_API_TOKEN + '&url=' + object_url)
             if getSongInfo.status_code == 200:
-                songInfo = getSongInfo['result']
+                songInfo = getSongInfo.json()['result']
                 songTitle = songInfo['title']
                 songArtist = songInfo['artist']
                 songAlbum = songInfo['album']
 
-                messageToSend = """
-                *Título: * {}
-                *Artista: * {}
-                *Album: * {}
-                    """.format(songTitle, songArtist, songAlbum)
+                messageToSend = ("Tu canción 🎶 es:\n"
+                                "*Título:* {}\n"
+                                "*Artista:* {}\n"
+                                "*Album:* {}").format(songTitle.encode('utf-8'), songArtist.encode('utf-8'), songAlbum.encode('utf-8'))
 
-                bot.reply_to(message, messageToSend, parse_mode="Markdown")
+                bot.send_message(message.chat.id, messageToSend, parse_mode="Markdown")
+
+                Song.set_config(message.chat.id, 'memory', songTitle, songAlbum, songArtist)
             else:
                 bot.reply_to(message, "Error de reconocimiento de audio.")
         else:
