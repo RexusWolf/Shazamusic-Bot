@@ -9,3 +9,4 @@ SQLAlchemy>=1.1.12,<2.0
 WebOb>=1.6,<2.0
 Requests>=2.20.0
 boto3>=1.0.0
+spotipy

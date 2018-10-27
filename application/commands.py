@@ -1,13 +1,18 @@
 # coding=utf-8
 from application import bot
 from boto3.session import Session
+from model.song import Song
 import requests
 import os
 import uuid
-from model.song import Song
+import spotipy
+
 
 TOKEN = os.environ.get('BOT_TOKEN')
 AUDD_API_TOKEN = os.environ.get('AUDD_API_TOKEN')
+
+SPOTIFY_TOKEN = "BQAoGspigMn5fN_ZoTBfdSVkQSGm_pmFfSfbRmJqzCnoHJK1XFW24BAGAnWz-yM1ZDGHH_9S4cIj19tEcvo"
+spotify = spotipy.Spotify(auth=SPOTIFY_TOKEN)
 
 session = Session(aws_access_key_id=os.environ.get('AWS_S3_ACCESS_KEY'),
                   aws_secret_access_key=os.environ.get('AWS_S3_SECRET_KEY'))
@@ -51,9 +56,14 @@ def echo_message(message):
                                 "*Título:* {}\n"
                                 "*Artista:* {}\n"
                                 "*Album:* {}").format(songTitle.encode('utf-8'), songArtist.encode('utf-8'), songAlbum.encode('utf-8'))
-
+                
                 bot.send_message(message.chat.id, messageToSend, parse_mode="Markdown")
+                
+                spotifySearch = spotify.search(q='track:' + songTitle.encode('utf-8'), type='track')
+                if(len(spotifySearch)):
+                    spotifyURL = spotifySearch['tracks']['items'][0]['external_urls']['spotify']
 
+                bot.send_message(message.chat.id, "*URL Spotify:* " + spotifyURL, parse_mode="Markdown")
                 Song.set_config(message.chat.id, 'memory', songTitle, songAlbum, songArtist)
             else:
                 bot.reply_to(message, "Error de reconocimiento de audio.")
